@@ -205,6 +205,7 @@ class EditNoteScreen extends StatefulWidget {
 class _EditNoteScreenState extends State<EditNoteScreen> {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -252,84 +253,90 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
                 Navigator.pop(context, 'delete');
               },
             ),
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () {
-              final title = _titleController.text;
-              final content = _contentController.text;
-              if (title.isNotEmpty || content.isNotEmpty) {
-                Navigator.pop(context, {'title': title, 'content': content});
-              } else {
-                Navigator.pop(context);
-              }
-            },
-          ),
          ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                hintText: 'Title',
-                border: InputBorder.none,
-              ),
-            ),
-            Expanded(
-              child: TextField(
-                controller: _contentController,
+      body:
+        Form(
+          key: _formKey,
+          child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _titleController,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 decoration: const InputDecoration(
-                  hintText: 'Content',
+                  hintText: 'Title',
                   border: InputBorder.none,
                 ),
-                maxLines: null,
-                expands: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a title';
+                  }
+                  return null;
+                },
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                final title = _titleController.text;
-                final content = _contentController.text;
-                if (title.isNotEmpty || content.isNotEmpty) {
-                  Navigator.pop(context, {'title': title, 'content': content});
-                } else {
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30.0),
+              Expanded(
+                child: TextFormField(
+                  controller: _contentController,
+                  decoration: const InputDecoration(
+                    hintText: 'Content',
+                    border: InputBorder.none,
+                  ),
+                  maxLines: null,
+                  expands: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter some content';
+                    }
+                    return null;
+                  },
                 ),
-                elevation: 5,
               ),
-              child: Ink(
-                decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.secondary,
-                      ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  final title = _titleController.text;
+                  final content = _contentController.text;
+                  // if (title.isNotEmpty || content.isNotEmpty) {
+                  if (_formKey.currentState!.validate()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Notes Saved')),
+                    );
+                    Navigator.pop(context, {'title': title, 'content': content});
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
+                  elevation: 5,
+                ),
+                child: Ink(
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.secondary,
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(30.0)),
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 150.0, minHeight: 50.0),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      "Save Note",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white),
                     ),
-                    borderRadius: BorderRadius.circular(30.0)),
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 150.0, minHeight: 50.0),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    "Save Note",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
