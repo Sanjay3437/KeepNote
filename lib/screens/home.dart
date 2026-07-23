@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'edit_note_screen.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
@@ -7,16 +9,23 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String title1 = 'Keep Notes';
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Keep Notes',
+      title: title1,
       theme: ThemeData(
         colorScheme: ColorScheme.light(
-          primary: Colors.green,
-          secondary: Colors.lightGreen,
+          primary: Colors.green,       //main app color—AppBar, primary buttons.
+          secondary: Colors.lightGreen,//accent color—highlights, secondary controls.
+          surface: Colors.white,       //background color of cards, dialogs, sheets.
+          // error:  Colors.red,           //validation/error color.
+          error:  Color(0xFFFF4B2B),           //validation/error color.
+          onPrimary: Colors.white,     //text/icon color displayed on top of primary.
+          onSecondary: Colors.black,   //text/icon color displayed on top of secondary.
+          onSurface: Colors.black,     //text/icon color displayed on top of surface.
         ),
       ),
-      home: const MyHomePage(title: 'Keep Notes'),
+      home:  MyHomePage(title: title1),
     );
   }
 }
@@ -64,37 +73,76 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
 
- final List<Map<String, dynamic>> _notes = [];
+  final List<Map<String, dynamic>> _notes = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 5,
-        foregroundColor: Colors.white,
-        title: Text(widget.title),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(82),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Material(
+              elevation: 7,
+              borderRadius: BorderRadius.circular(28),
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Center(
+                  child: Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
       ),
       body: _notes.isEmpty
           ? Padding(
-              padding: const EdgeInsets.only(top: 10.0),
-              child: const Center(
-              child: Text('No notes yet!!!'),
+        padding: const EdgeInsets.only(top: 10.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                'assets/images/bg.svg',
+                width: 100,
+                height: 100,
+                semanticsLabel: 'App Logo',
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'No notes yet. Tap + to add one!',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      )
+        : Stack(
+          children: [
+            Positioned.fill(
+              child: SvgPicture.asset('assets/images/bglast.svg', fit: BoxFit.cover,),
             ),
-          )
-          : Padding(
+            Padding(
               padding: const EdgeInsets.only(top: 10.0),
               child: ListView.builder(
               itemCount: _notes.length,
@@ -123,9 +171,12 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       subtitle: Text(
                         _notes[index]['content'] ?? '',
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.normal),
                       ),
                       onTap: () async {
+
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -137,7 +188,6 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                           ),
                         );
-
                         if (result != null && result is Map<String, String>) {
                           await _notebook.put(_notes[index]['key'], result);
                           _refreshNotes();
@@ -149,9 +199,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                 );
-              },
+              },)
             ),
-          ),
+          ],
+        ),
         floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(
@@ -193,152 +244,4 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class EditNoteScreen extends StatefulWidget {
-  final Map<String, String>? note;
 
-  const EditNoteScreen({super.key, this.note});
-
-  @override
-  State<EditNoteScreen> createState() => _EditNoteScreenState();
-}
-
-class _EditNoteScreenState extends State<EditNoteScreen> {
-  late TextEditingController _titleController;
-  late TextEditingController _contentController;
-  final _formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(
-      text: widget.note?['title'] ?? '',
-    );
-    _contentController = TextEditingController(
-      text: widget.note?['content'] ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 5,
-        foregroundColor: Colors.white,
-        title: Text(widget.note == null ? 'New Note' : 'Edit Note'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-        ),
-        actions: [
-          if (widget.note != null)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                Navigator.pop(context, 'delete');
-              },
-            ),
-         ],
-      ),
-      body:
-        Form(
-          key: _formKey,
-          child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _titleController,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                decoration: const InputDecoration(
-                  hintText: 'Title',
-                  border: InputBorder.none,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
-              ),
-              Expanded(
-                child: TextFormField(
-                  controller: _contentController,
-                  decoration: const InputDecoration(
-                    hintText: 'Content',
-                    border: InputBorder.none,
-                  ),
-                  maxLines: null,
-                  expands: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter some content';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  final title = _titleController.text;
-                  final content = _contentController.text;
-                  // if (title.isNotEmpty || content.isNotEmpty) {
-                  if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Notes Saved')),
-                    );
-                    Navigator.pop(context, {'title': title, 'content': content});
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                  elevation: 5,
-                ),
-                child: Ink(
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.secondary,
-                        ],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(30.0)),
-                  child: Container(
-                    constraints: const BoxConstraints(minWidth: 150.0, minHeight: 50.0),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      "Save Note",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
